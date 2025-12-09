@@ -30,7 +30,7 @@ async function main() {
       slug: 'curaciones',
       description: 'Atención profesional de heridas, úlceras por presión, quemaduras y cuidados post-quirúrgicos con técnicas estériles y materiales de alta calidad. Nuestro equipo está capacitado para manejar todo tipo de heridas, desde las más simples hasta las más complejas.',
       shortDescription: 'Atención profesional de heridas y cuidados post-quirúrgicos',
-      icon: 'bandage',
+      icon: 'heart',
       price: 25000,
       priceType: 'FIXED',
       duration: 45,
@@ -102,6 +102,37 @@ async function main() {
   }
   console.log('✅ Services created:', services.length);
 
+  // Create available slots (horarios de atención)
+  const availableSlots = [
+    // Lunes a Viernes - Mañana
+    { dayOfWeek: 1, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
+    { dayOfWeek: 2, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
+    { dayOfWeek: 3, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
+    { dayOfWeek: 4, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
+    { dayOfWeek: 5, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
+    // Lunes a Viernes - Tarde
+    { dayOfWeek: 1, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 2, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 3, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 4, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 5, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
+    // Sábado
+    { dayOfWeek: 6, startTime: '09:00', endTime: '14:00', slotDuration: 60 },
+  ];
+
+  // Eliminar slots existentes y crear nuevos
+  await prisma.availableSlot.deleteMany({});
+  for (const slot of availableSlots) {
+    await prisma.availableSlot.create({
+      data: {
+        ...slot,
+        maxBookings: 1,
+        isActive: true,
+      },
+    });
+  }
+  console.log('✅ Available slots created:', availableSlots.length);
+
   // Create team members
   const teamMembers = [
     {
@@ -127,6 +158,8 @@ async function main() {
     },
   ];
 
+  // Eliminar y recrear team members
+  await prisma.teamMember.deleteMany({});
   for (const member of teamMembers) {
     await prisma.teamMember.create({
       data: member,
@@ -162,6 +195,7 @@ async function main() {
     },
   ];
 
+  await prisma.review.deleteMany({});
   for (const review of reviews) {
     await prisma.review.create({
       data: review,
@@ -261,17 +295,15 @@ async function main() {
       description: 'Social media links',
     },
     {
-      key: 'business_hours',
+      key: 'booking_settings',
       value: {
-        monday: '24 horas',
-        tuesday: '24 horas',
-        wednesday: '24 horas',
-        thursday: '24 horas',
-        friday: '24 horas',
-        saturday: '24 horas',
-        sunday: '24 horas',
+        minHoursBeforeCancel: 2,
+        maxDaysInAdvance: 30,
+        defaultSlotDuration: 60,
+        allowWeekends: true,
+        sundayClosed: true,
       },
-      description: 'Business hours',
+      description: 'Booking configuration',
     },
   ];
 

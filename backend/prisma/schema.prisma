@@ -41,22 +41,23 @@ enum Role {
 // ==================== SERVICES ====================
 
 model Service {
-  id            String    @id @default(uuid())
-  title         String
-  slug          String    @unique
-  description   String
+  id               String    @id @default(uuid())
+  title            String
+  slug             String    @unique
+  description      String
   shortDescription String?
-  icon          String?
-  price         Decimal   @db.Decimal(10, 2)
-  priceType     PriceType @default(FIXED)
-  duration      Int?      // Duration in minutes
-  isActive      Boolean   @default(true)
-  order         Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  icon             String?
+  price            Decimal   @db.Decimal(10, 2)
+  priceType        PriceType @default(FIXED)
+  duration         Int?      // Duration in minutes
+  isActive         Boolean   @default(true)
+  order            Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relations
-  appointments  Appointment[]
+  appointments     Appointment[]
+  availableSlots   AvailableSlot[]
 
   @@map("services")
 }
@@ -70,21 +71,48 @@ enum PriceType {
 // ==================== APPOINTMENTS ====================
 
 model Appointment {
-  id            String            @id @default(uuid())
-  userId        String
-  serviceId     String
-  date          DateTime
-  time          String
-  status        AppointmentStatus @default(PENDING)
-  notes         String?
-  address       String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id               String            @id @default(uuid())
+  
+  // Usuario registrado (opcional - para citas de usuarios logueados)
+  userId           String?
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Datos del paciente (para citas públicas sin login)
+  patientName      String
+  patientRut       String
+  patientEmail     String
+  patientPhone     String?
+  
+  // Servicio y horario
+  serviceId        String
+  service          Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  date             DateTime
+  startTime        String            // Formato "HH:MM"
+  endTime          String            // Formato "HH:MM"
+  
+  // Estado y metadata
+  status           AppointmentStatus @default(PENDING)
+  notes            String?
+  address          String?
+  
+  // Token para cancelación (acceso sin login)
+  cancelToken      String            @unique @default(uuid())
+  
+  // Confirmación
+  confirmedAt      DateTime?
+  cancelledAt      DateTime?
+  cancelReason     String?
+  
+  // Recordatorios
+  reminderSentAt   DateTime?
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
-  // Relations
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  service       Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-
+  @@index([date, status])
+  @@index([patientEmail])
+  @@index([patientRut])
+  @@index([cancelToken])
   @@map("appointments")
 }
 
@@ -94,6 +122,46 @@ enum AppointmentStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  NO_SHOW
+}
+
+// ==================== AVAILABLE SLOTS ====================
+// Define los horarios disponibles para agendar
+
+model AvailableSlot {
+  id            String    @id @default(uuid())
+  serviceId     String?   // Si es null, aplica a todos los servicios
+  service       Service?  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  dayOfWeek     Int       // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+  startTime     String    // Formato "HH:MM"
+  endTime       String    // Formato "HH:MM"
+  slotDuration  Int       @default(60) // Duración de cada slot en minutos
+  maxBookings   Int       @default(1)  // Máximo de citas por slot (para servicios grupales)
+  
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("available_slots")
+}
+
+// ==================== BLOCKED DATES ====================
+// Para bloquear fechas específicas (feriados, vacaciones, etc.)
+
+model BlockedDate {
+  id            String    @id @default(uuid())
+  date          DateTime
+  reason        String?
+  isFullDay     Boolean   @default(true)
+  startTime     String?   // Si no es día completo
+  endTime       String?   // Si no es día completo
+  
+  createdAt     DateTime  @default(now())
+
+  @@index([date])
+  @@map("blocked_dates")
 }
 
 // ==================== REVIEWS / TESTIMONIALS ====================

@@ -6,6 +6,7 @@ const serviceRoutes = require('./services');
 const appointmentRoutes = require('./appointments');
 const contentRoutes = require('./content');
 const userRoutes = require('./users');
+const publicBookingRoutes = require('./publicBooking');
 
 // Health check
 router.get('/health', (req, res) => {
@@ -21,6 +22,7 @@ router.use('/auth', authRoutes);
 router.use('/services', serviceRoutes);
 router.use('/appointments', appointmentRoutes);
 router.use('/users', userRoutes);
+router.use('/booking', publicBookingRoutes); // Nueva ruta para agendamiento público
 
 // Content routes (mounted at root level for cleaner URLs)
 router.use('/', contentRoutes);
