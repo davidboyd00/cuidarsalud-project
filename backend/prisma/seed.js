@@ -4,125 +4,145 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log('🌱 Starting database seed for Centro Benavente...');
 
   // Create admin user
   const hashedPassword = await bcrypt.hash('admin123', 12);
   
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@cuidarsalud.com' },
+    where: { email: 'admin@centrobenavente.cl' },
     update: {},
     create: {
-      email: 'admin@cuidarsalud.com',
+      email: 'admin@centrobenavente.cl',
       password: hashedPassword,
       firstName: 'Admin',
-      lastName: 'CuidarSalud',
-      phone: '+56912345678',
+      lastName: 'Centro Benavente',
+      phone: '+56910155119',
       role: 'ADMIN',
     },
   });
   console.log('✅ Admin user created:', admin.email);
 
-  // Create services
+  // Eliminar servicios existentes
+  await prisma.service.deleteMany({});
+  
+  // Crear servicios reales de Centro Benavente
   const services = [
     {
-      title: 'Curaciones',
-      slug: 'curaciones',
-      description: 'Atención profesional de heridas, úlceras por presión, quemaduras y cuidados post-quirúrgicos con técnicas estériles y materiales de alta calidad. Nuestro equipo está capacitado para manejar todo tipo de heridas, desde las más simples hasta las más complejas.',
-      shortDescription: 'Atención profesional de heridas y cuidados post-quirúrgicos',
+      title: 'Curaciones Simples',
+      slug: 'curaciones-simples',
+      description: 'Atención profesional para heridas menores, cortes superficiales y cuidados básicos de lesiones. Incluye limpieza, desinfección y vendaje con materiales estériles de alta calidad.',
+      shortDescription: 'Atención de heridas menores y cortes superficiales',
       icon: 'heart',
-      price: 25000,
+      price: 15000, // Precio por confirmar
       priceType: 'FIXED',
-      duration: 45,
+      duration: 30,
+      resourceType: 'ENFERMERA',
       order: 1,
     },
     {
-      title: 'Inyecciones',
-      slug: 'inyecciones',
-      description: 'Aplicación segura de medicamentos intramusculares, subcutáneos e intravenosos. Incluye administración de tratamientos prescritos por su médico con todas las medidas de bioseguridad.',
-      shortDescription: 'Aplicación segura de medicamentos inyectables',
-      icon: 'syringe',
-      price: 15000,
+      title: 'Curaciones Avanzadas',
+      slug: 'curaciones-avanzadas',
+      description: 'Tratamiento especializado para heridas complejas, úlceras por presión, pie diabético, quemaduras y heridas post-quirúrgicas. Utilizamos técnicas avanzadas de curación y materiales especializados.',
+      shortDescription: 'Tratamiento de heridas complejas y úlceras',
+      icon: 'heart',
+      price: 25000, // Precio por confirmar
       priceType: 'FIXED',
-      duration: 20,
+      duration: 45,
+      resourceType: 'ENFERMERA',
       order: 2,
     },
     {
-      title: 'Control de Signos Vitales',
-      slug: 'control-signos-vitales',
-      description: 'Monitoreo completo de presión arterial, frecuencia cardíaca, temperatura, saturación de oxígeno y glucemia capilar. Ideal para pacientes con enfermedades crónicas o en seguimiento médico.',
-      shortDescription: 'Monitoreo completo de signos vitales',
-      icon: 'stethoscope',
-      price: 20000,
+      title: 'Retiro de Suturas',
+      slug: 'retiro-suturas',
+      description: 'Retiro seguro y profesional de puntos de sutura post-quirúrgicos. Evaluamos la cicatrización y brindamos indicaciones de cuidado posterior para una óptima recuperación.',
+      shortDescription: 'Retiro profesional de puntos post-quirúrgicos',
+      icon: 'scissors',
+      price: 12000, // Precio por confirmar
       priceType: 'FIXED',
-      duration: 30,
+      duration: 20,
+      resourceType: 'ENFERMERA',
       order: 3,
     },
     {
-      title: 'Cuidado Domiciliario',
-      slug: 'cuidado-domiciliario',
-      description: 'Atención integral en la comodidad de su hogar. Ideal para pacientes en recuperación, adultos mayores o personas con movilidad reducida. Incluye asistencia en actividades diarias, administración de medicamentos y acompañamiento.',
-      shortDescription: 'Atención integral en la comodidad de su hogar',
-      icon: 'home',
-      price: 40000,
-      priceType: 'HOURLY',
-      duration: 60,
+      title: 'Administración de Tratamientos',
+      slug: 'administracion-tratamientos',
+      description: 'Aplicación de medicamentos inyectables (intramuscular, subcutáneo, intravenoso) según indicación médica. Incluye inyecciones, sueros y tratamientos prescritos por su médico.',
+      shortDescription: 'Aplicación de medicamentos e inyecciones',
+      icon: 'syringe',
+      price: 10000, // Precio por confirmar
+      priceType: 'FIXED',
+      duration: 25,
+      resourceType: 'ENFERMERA',
       order: 4,
     },
     {
-      title: 'Cuidado Post-Operatorio',
-      slug: 'cuidado-post-operatorio',
-      description: 'Seguimiento especializado después de cirugías. Incluye manejo del dolor, cuidado de heridas, prevención de complicaciones y rehabilitación temprana siguiendo las indicaciones de su médico tratante.',
-      shortDescription: 'Seguimiento especializado después de cirugías',
-      icon: 'heart',
-      price: 50000,
-      priceType: 'CONSULTATION',
-      duration: 60,
+      title: 'Procedimientos de Enfermería',
+      slug: 'procedimientos-enfermeria',
+      description: 'Diversos procedimientos de enfermería incluyendo control de signos vitales, sondajes, instalación de vías, cambio de bolsas colectoras, y otros cuidados especializados.',
+      shortDescription: 'Control de signos vitales y procedimientos varios',
+      icon: 'stethoscope',
+      price: 18000, // Precio por confirmar
+      priceType: 'FIXED',
+      duration: 40,
+      resourceType: 'ENFERMERA',
       order: 5,
     },
     {
-      title: 'Turno de Enfermería',
-      slug: 'turno-enfermeria',
-      description: 'Personal de enfermería disponible por turnos de 8, 12 o 24 horas para pacientes que requieren atención continua. Ideal para hospitalización domiciliaria o cuidados paliativos.',
-      shortDescription: 'Personal por turnos para atención continua',
-      icon: 'clock',
-      price: 80000,
+      title: 'Traslado Simple de Pacientes',
+      slug: 'traslado-pacientes',
+      description: 'Servicio de acompañamiento y asistencia en el traslado de pacientes con movilidad reducida. Incluye apoyo para levantarse, caminar y movilizarse de manera segura.',
+      shortDescription: 'Asistencia en movilización de pacientes',
+      icon: 'car',
+      price: 20000, // Precio por confirmar
       priceType: 'FIXED',
-      duration: 480,
+      duration: 60,
+      resourceType: 'CHOFER',
       order: 6,
     },
   ];
 
   for (const service of services) {
-    await prisma.service.upsert({
-      where: { slug: service.slug },
-      update: service,
-      create: service,
+    await prisma.service.create({
+      data: service,
     });
   }
   console.log('✅ Services created:', services.length);
 
-  // Create available slots (horarios de atención)
-  const availableSlots = [
+  // Eliminar slots existentes
+  await prisma.availableSlot.deleteMany({});
+  
+  // Crear horarios disponibles para ENFERMERA
+  const enfermeraSlots = [
     // Lunes a Viernes - Mañana
-    { dayOfWeek: 1, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
-    { dayOfWeek: 2, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
-    { dayOfWeek: 3, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
-    { dayOfWeek: 4, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
-    { dayOfWeek: 5, startTime: '08:00', endTime: '13:00', slotDuration: 60 },
+    { dayOfWeek: 1, startTime: '08:00', endTime: '13:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+    { dayOfWeek: 2, startTime: '08:00', endTime: '13:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+    { dayOfWeek: 3, startTime: '08:00', endTime: '13:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+    { dayOfWeek: 4, startTime: '08:00', endTime: '13:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+    { dayOfWeek: 5, startTime: '08:00', endTime: '13:00', slotDuration: 60, resourceType: 'ENFERMERA' },
     // Lunes a Viernes - Tarde
-    { dayOfWeek: 1, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
-    { dayOfWeek: 2, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
-    { dayOfWeek: 3, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
-    { dayOfWeek: 4, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
-    { dayOfWeek: 5, startTime: '14:00', endTime: '18:00', slotDuration: 60 },
+    { dayOfWeek: 1, startTime: '14:00', endTime: '18:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+    { dayOfWeek: 2, startTime: '14:00', endTime: '18:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+    { dayOfWeek: 3, startTime: '14:00', endTime: '18:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+    { dayOfWeek: 4, startTime: '14:00', endTime: '18:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+    { dayOfWeek: 5, startTime: '14:00', endTime: '18:00', slotDuration: 60, resourceType: 'ENFERMERA' },
     // Sábado
-    { dayOfWeek: 6, startTime: '09:00', endTime: '14:00', slotDuration: 60 },
+    { dayOfWeek: 6, startTime: '09:00', endTime: '14:00', slotDuration: 60, resourceType: 'ENFERMERA' },
+  ];
+  
+  // Crear horarios disponibles para CHOFER
+  const choferSlots = [
+    { dayOfWeek: 1, startTime: '08:00', endTime: '18:00', slotDuration: 60, resourceType: 'CHOFER' },
+    { dayOfWeek: 2, startTime: '08:00', endTime: '18:00', slotDuration: 60, resourceType: 'CHOFER' },
+    { dayOfWeek: 3, startTime: '08:00', endTime: '18:00', slotDuration: 60, resourceType: 'CHOFER' },
+    { dayOfWeek: 4, startTime: '08:00', endTime: '18:00', slotDuration: 60, resourceType: 'CHOFER' },
+    { dayOfWeek: 5, startTime: '08:00', endTime: '18:00', slotDuration: 60, resourceType: 'CHOFER' },
+    { dayOfWeek: 6, startTime: '09:00', endTime: '14:00', slotDuration: 60, resourceType: 'CHOFER' },
   ];
 
-  // Eliminar slots existentes y crear nuevos
-  await prisma.availableSlot.deleteMany({});
-  for (const slot of availableSlots) {
+  const allSlots = [...enfermeraSlots, ...choferSlots];
+  
+  for (const slot of allSlots) {
     await prisma.availableSlot.create({
       data: {
         ...slot,
@@ -131,35 +151,21 @@ async function main() {
       },
     });
   }
-  console.log('✅ Available slots created:', availableSlots.length);
+  console.log('✅ Available slots created:', allSlots.length);
 
   // Create team members
+  await prisma.teamMember.deleteMany({});
+  
   const teamMembers = [
     {
-      name: 'Dra. María González',
-      position: 'Directora de Enfermería',
-      bio: 'Más de 15 años de experiencia en cuidados críticos y gestión de equipos de salud.',
-      specialties: ['Cuidados Intensivos', 'Gestión en Salud', 'Educación en Enfermería'],
+      name: 'Equipo Centro Benavente',
+      position: 'Profesionales de Salud',
+      bio: 'Contamos con un equipo de profesionales de enfermería certificados y con amplia experiencia en atención domiciliaria.',
+      specialties: ['Curaciones', 'Procedimientos', 'Cuidados Integrales'],
       order: 1,
-    },
-    {
-      name: 'Enf. Carlos Rodríguez',
-      position: 'Enfermero Jefe',
-      bio: 'Especialista en cuidados domiciliarios y atención geriátrica con 10 años de experiencia.',
-      specialties: ['Geriatría', 'Cuidados Paliativos', 'Heridas Complejas'],
-      order: 2,
-    },
-    {
-      name: 'Enf. Ana Martínez',
-      position: 'Coordinadora de Servicios',
-      bio: 'Experta en coordinación de atención domiciliaria y seguimiento de pacientes.',
-      specialties: ['Coordinación', 'Atención Domiciliaria', 'Pediatría'],
-      order: 3,
     },
   ];
 
-  // Eliminar y recrear team members
-  await prisma.teamMember.deleteMany({});
   for (const member of teamMembers) {
     await prisma.teamMember.create({
       data: member,
@@ -168,34 +174,35 @@ async function main() {
   console.log('✅ Team members created:', teamMembers.length);
 
   // Create testimonials/reviews
+  await prisma.review.deleteMany({});
+  
   const reviews = [
     {
-      name: 'María González',
+      name: 'María G.',
       role: 'Paciente',
-      content: 'Excelente servicio. La enfermera que me atendió fue muy profesional y cuidadosa con las curaciones de mi madre. Totalmente recomendados.',
+      content: 'Excelente atención. El personal es muy profesional y cuidadoso. Me atendieron las curaciones con mucho cariño. Totalmente recomendados.',
       rating: 5,
       isApproved: true,
       isFeatured: true,
     },
     {
-      name: 'Carlos Rodríguez',
+      name: 'Carlos R.',
       role: 'Familiar de paciente',
-      content: 'Contratamos el servicio de cuidado domiciliario para mi padre. El personal es puntual, amable y muy capacitado. Nos dieron mucha tranquilidad.',
+      content: 'Mi madre necesitaba curaciones diarias y el equipo de Centro Benavente fue puntual, amable y muy capacitado. Nos dieron mucha tranquilidad.',
       rating: 5,
       isApproved: true,
       isFeatured: true,
     },
     {
-      name: 'Ana Martínez',
+      name: 'Ana M.',
       role: 'Paciente',
-      content: 'Después de mi cirugía necesitaba ayuda con las curaciones. El equipo fue increíble, siempre llegaron a tiempo y con todos los materiales necesarios.',
+      content: 'Me retiraron los puntos después de mi operación. El procedimiento fue rápido, sin dolor y muy profesional. Los recomiendo totalmente.',
       rating: 5,
       isApproved: true,
       isFeatured: true,
     },
   ];
 
-  await prisma.review.deleteMany({});
   for (const review of reviews) {
     await prisma.review.create({
       data: review,
@@ -210,16 +217,16 @@ async function main() {
       section: 'home',
       title: 'Hero Section',
       content: {
-        badge: 'Atención 24/7 a Domicilio',
-        title: 'Cuidado profesional de enfermería en',
-        titleHighlight: 'la comodidad de tu hogar',
-        description: 'Equipo de enfermeras profesionales certificadas. Curaciones, inyecciones, control de signos vitales y cuidado integral con la más alta calidad y calidez humana.',
-        primaryButton: 'Agendar Ahora',
-        secondaryButton: 'Conocer Más',
-        phone: '+56 9 1234 5678',
+        badge: 'Atención profesional en Ovalle',
+        title: 'Procedimientos y atenciones de salud',
+        titleHighlight: 'a domicilio',
+        description: 'Equipo de profesionales de enfermería certificados. Curaciones, administración de tratamientos, retiro de suturas y más servicios con la calidez que te mereces.',
+        primaryButton: 'Agendar Hora',
+        secondaryButton: 'WhatsApp',
+        phone: '+56 9 1015 5119',
         stats: [
-          { number: '500+', label: 'Pacientes Atendidos' },
-          { number: '15+', label: 'Profesionales' },
+          { number: '500+', label: 'Pacientes' },
+          { number: '10+', label: 'Profesionales' },
           { number: '98%', label: 'Satisfacción' },
         ],
       },
@@ -230,14 +237,14 @@ async function main() {
       section: 'home',
       title: 'About Section',
       content: {
-        subtitle: 'Sobre Nosotros',
+        subtitle: '¿Por qué elegirnos?',
         title: 'Cuidamos de ti como si fueras de nuestra familia',
-        description: 'Somos un equipo de profesionales de enfermería con más de 10 años de experiencia brindando atención de salud a domicilio. Nuestro compromiso es ofrecer un servicio de calidad, con calidez humana y respeto por cada paciente.',
+        description: 'En Centro Benavente nos comprometemos a brindarte la mejor atención de salud, con profesionalismo y calidez humana.',
         features: [
-          'Personal certificado y con experiencia verificable',
-          'Equipamiento médico de última generación',
-          'Disponibilidad 24/7 para emergencias',
-          'Seguimiento continuo del paciente',
+          'Personal certificado y con experiencia comprobable',
+          'Puntualidad y compromiso en cada atención',
+          'Trato humano y personalizado',
+          'Equipo multidisciplinario a tu disposición',
         ],
       },
       order: 2,
@@ -247,13 +254,13 @@ async function main() {
       section: 'home',
       title: 'Contact Section',
       content: {
-        subtitle: 'Contáctanos',
+        subtitle: 'Contacto',
         title: 'Estamos aquí para ayudarte',
-        description: 'No dudes en comunicarte con nosotros. Responderemos todas tus consultas a la brevedad.',
-        email: 'contacto@cuidarsalud.com',
-        phone: '+56 9 1234 5678',
-        address: 'Santiago, Chile',
-        hours: 'Lunes a Domingo, 24 horas',
+        description: '¿Tienes dudas sobre nuestros servicios? Contáctanos y te responderemos a la brevedad.',
+        email: 'saludbenavente@gmail.com',
+        phone: '+56 9 1015 5119',
+        address: 'Benavente 85, Ovalle',
+        hours: 'Lun-Vie: 8:00-18:00 | Sáb: 9:00-14:00',
       },
       order: 3,
     },
@@ -272,25 +279,28 @@ async function main() {
   const settings = [
     {
       key: 'site_name',
-      value: { name: 'CuidarSalud', tagline: 'Enfermería a Domicilio' },
-      description: 'Site name and tagline',
+      value: { 
+        name: 'Centro Benavente', 
+        tagline: 'Procedimientos y atenciones de salud',
+        legalName: 'Procedimientos X-Press SPA',
+        rut: '78.022.568-8',
+      },
+      description: 'Site name and legal info',
     },
     {
       key: 'contact_info',
       value: {
-        email: 'contacto@cuidarsalud.com',
-        phone: '+56 9 1234 5678',
-        whatsapp: '+56912345678',
-        address: 'Santiago, Chile',
+        email: 'saludbenavente@gmail.com',
+        phone: '+56 9 1015 5119',
+        whatsapp: '+56910155119',
+        address: 'Benavente 85, Ovalle, Chile',
       },
       description: 'Contact information',
     },
     {
       key: 'social_media',
       value: {
-        facebook: 'https://facebook.com/cuidarsalud',
-        instagram: 'https://instagram.com/cuidarsalud',
-        twitter: 'https://twitter.com/cuidarsalud',
+        instagram: 'https://instagram.com/centrobenavente',
       },
       description: 'Social media links',
     },
@@ -316,7 +326,19 @@ async function main() {
   }
   console.log('✅ Settings created:', settings.length);
 
-  console.log('🎉 Database seed completed successfully!');
+  console.log('');
+  console.log('🎉 Database seed for Centro Benavente completed!');
+  console.log('');
+  console.log('📋 Admin credentials:');
+  console.log('   Email: admin@centrobenavente.cl');
+  console.log('   Password: admin123');
+  console.log('');
+  console.log('📍 Business info:');
+  console.log('   Name: Centro Benavente');
+  console.log('   Legal: Procedimientos X-Press SPA');
+  console.log('   RUT: 78.022.568-8');
+  console.log('   Address: Benavente 85, Ovalle');
+  console.log('   Phone: +56 9 1015 5119');
 }
 
 main()

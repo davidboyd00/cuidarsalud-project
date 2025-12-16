@@ -1,20 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const appointmentController = require('../controllers/appointmentController');
-const { authenticate, isAdmin, isStaff, validate, rules } = require('../middleware');
+const {
+  getAllAppointments,
+  getMyAppointments,
+  getAppointmentById,
+  updateAppointment,
+  updateAppointmentStatus,
+  deleteAppointment,
+} = require('../controllers/appointmentController');
+const { authenticate, isAdmin, isStaff } = require('../middleware/auth');
 
-// Public routes
-router.get('/slots', appointmentController.getAvailableSlots);
+// Rutas para usuarios autenticados
+router.get('/mine', authenticate, getMyAppointments);
 
-// User routes (authenticated)
-router.get('/my', authenticate, appointmentController.getMyAppointments);
-router.post('/', authenticate, rules.appointment, validate, appointmentController.createAppointment);
-router.put('/:id/cancel', authenticate, rules.uuidParam, validate, appointmentController.cancelAppointment);
-
-// Staff/Admin routes
-router.get('/', authenticate, isStaff, appointmentController.getAllAppointments);
-router.get('/stats', authenticate, isAdmin, appointmentController.getAppointmentStats);
-router.get('/:id', authenticate, rules.uuidParam, validate, appointmentController.getAppointment);
-router.put('/:id/status', authenticate, isStaff, rules.uuidParam, validate, appointmentController.updateAppointmentStatus);
+// Rutas para admin/staff
+router.get('/', authenticate, isStaff, getAllAppointments);
+router.get('/:id', authenticate, isStaff, getAppointmentById);
+router.put('/:id', authenticate, isStaff, updateAppointment);
+router.put('/:id/status', authenticate, isStaff, updateAppointmentStatus);
+router.delete('/:id', authenticate, isAdmin, deleteAppointment);
 
 module.exports = router;

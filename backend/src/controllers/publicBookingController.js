@@ -51,17 +51,18 @@ const formatRut = (rut) => {
 };
 
 /**
- * Generar slots disponibles para una fecha
+ * Generar slots disponibles para una fecha y tipo de recurso
  */
-const generateSlotsForDate = async (date, serviceId = null) => {
+const generateSlotsForDate = async (date, resourceType = 'ENFERMERA', serviceId = null) => {
   const queryDate = new Date(date);
   const dayOfWeek = queryDate.getDay();
   
-  // Obtener configuración de slots para este día
+  // Obtener configuración de slots para este día y tipo de recurso
   const slotConfigs = await prisma.availableSlot.findMany({
     where: {
       dayOfWeek,
       isActive: true,
+      resourceType,
       OR: [
         { serviceId: null },
         { serviceId: serviceId },
@@ -80,13 +81,17 @@ const generateSlotsForDate = async (date, serviceId = null) => {
     slotConfigs.push(...defaultSlots.map(s => ({ ...s, maxBookings: 1 })));
   }
   
-  // Verificar si la fecha está bloqueada
+  // Verificar si la fecha está bloqueada para este tipo de recurso
   const blockedDate = await prisma.blockedDate.findFirst({
     where: {
       date: {
-        gte: new Date(queryDate.setHours(0, 0, 0, 0)),
-        lt: new Date(queryDate.setHours(23, 59, 59, 999)),
+        gte: new Date(new Date(queryDate).setHours(0, 0, 0, 0)),
+        lt: new Date(new Date(queryDate).setHours(23, 59, 59, 999)),
       },
+      OR: [
+        { resourceType: null }, // Bloqueado para todos
+        { resourceType: resourceType }, // Bloqueado para este tipo
+      ],
     },
   });
   
@@ -148,6 +153,18 @@ const getAvailableSlots = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'La fecha es requerida');
   }
   
+  // Obtener el tipo de recurso del servicio
+  let resourceType = 'ENFERMERA';
+  if (serviceId) {
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+      select: { resourceType: true },
+    });
+    if (service) {
+      resourceType = service.resourceType;
+    }
+  }
+  
   const queryDate = new Date(date);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -164,10 +181,10 @@ const getAvailableSlots = asyncHandler(async (req, res) => {
     });
   }
   
-  // Generar todos los slots posibles para esta fecha
-  const allSlots = await generateSlotsForDate(date, serviceId);
+  // Generar todos los slots posibles para esta fecha y tipo de recurso
+  const allSlots = await generateSlotsForDate(date, resourceType, serviceId);
   
-  // Obtener citas existentes para esta fecha
+  // Obtener citas existentes para esta fecha Y ESTE TIPO DE RECURSO
   const startOfDay = new Date(queryDate);
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(queryDate);
@@ -179,10 +196,10 @@ const getAvailableSlots = asyncHandler(async (req, res) => {
         gte: startOfDay,
         lte: endOfDay,
       },
+      resourceType: resourceType, // Solo del mismo tipo de recurso
       status: {
         in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'],
       },
-      ...(serviceId && { serviceId }),
     },
     select: {
       startTime: true,
@@ -220,6 +237,7 @@ const getAvailableSlots = asyncHandler(async (req, res) => {
     data: {
       date,
       serviceId,
+      resourceType,
       slots: slotsWithAvailability,
     },
   });
@@ -236,11 +254,23 @@ const getCalendarAvailability = asyncHandler(async (req, res) => {
   const queryMonth = parseInt(month) || new Date().getMonth() + 1;
   const queryYear = parseInt(year) || new Date().getFullYear();
   
+  // Obtener el tipo de recurso del servicio
+  let resourceType = 'ENFERMERA';
+  if (serviceId) {
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+      select: { resourceType: true },
+    });
+    if (service) {
+      resourceType = service.resourceType;
+    }
+  }
+  
   // Obtener primer y último día del mes
   const startDate = new Date(queryYear, queryMonth - 1, 1);
   const endDate = new Date(queryYear, queryMonth, 0);
   
-  // Obtener fechas bloqueadas
+  // Obtener fechas bloqueadas para este tipo de recurso
   const blockedDates = await prisma.blockedDate.findMany({
     where: {
       date: {
@@ -248,6 +278,10 @@ const getCalendarAvailability = asyncHandler(async (req, res) => {
         lte: endDate,
       },
       isFullDay: true,
+      OR: [
+        { resourceType: null },
+        { resourceType: resourceType },
+      ],
     },
     select: {
       date: true,
@@ -302,6 +336,7 @@ const getCalendarAvailability = asyncHandler(async (req, res) => {
     data: {
       month: queryMonth,
       year: queryYear,
+      resourceType,
       days,
     },
   });
@@ -350,7 +385,10 @@ const createPublicBooking = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'El servicio seleccionado no está disponible');
   }
   
-  // Verificar disponibilidad del slot
+  // Obtener el tipo de recurso del servicio
+  const resourceType = service.resourceType;
+  
+  // Verificar disponibilidad del slot PARA ESTE TIPO DE RECURSO
   const queryDate = new Date(date);
   const startOfDay = new Date(queryDate);
   startOfDay.setHours(0, 0, 0, 0);
@@ -364,6 +402,7 @@ const createPublicBooking = asyncHandler(async (req, res) => {
         lte: endOfDay,
       },
       startTime,
+      resourceType: resourceType, // Solo verifica conflictos con el mismo tipo de recurso
       status: {
         in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'],
       },
@@ -407,6 +446,7 @@ const createPublicBooking = asyncHandler(async (req, res) => {
       date: startOfDay,
       startTime,
       endTime,
+      resourceType, // Guardar el tipo de recurso
       patientName: patientName.trim(),
       patientRut: formatRut(patientRut),
       patientEmail: patientEmail.toLowerCase().trim(),
@@ -423,6 +463,7 @@ const createPublicBooking = asyncHandler(async (req, res) => {
           title: true,
           price: true,
           duration: true,
+          resourceType: true,
         },
       },
     },
@@ -443,8 +484,8 @@ const createPublicBooking = asyncHandler(async (req, res) => {
       patientName: appointment.patientName,
       patientEmail: appointment.patientEmail,
       status: appointment.status,
+      resourceType: appointment.resourceType,
       cancelToken: appointment.cancelToken,
-      // URL para cancelar
       cancelUrl: `/cancelar-cita/${appointment.cancelToken}`,
     },
   });
